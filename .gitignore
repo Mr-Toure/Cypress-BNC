@@ -1,0 +1,9 @@
+/node_modules
+/.env
+/cypress/videos
+/.DS_Store
+/.idea
+/.vscode
+/.history
+/package-lock.json
+/cypress/screenshots
