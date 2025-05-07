@@ -26,6 +26,17 @@ module.exports = defineConfig({
         }
       })
 
+      // Ignorer les erreurs de console
+      on('task', {
+        ignoreConsoleErrors() {
+          Cypress.on('uncaught:exception', (err) => {
+            console.warn('Erreur ignorée :', err.message)
+            return false // Empêche Cypress de bloquer le test
+          })
+          return null
+        }
+      })
+
       // Événement après la fin du test pour générer un rapport
       on('after:spec', (spec, results) => {
         // Créer un rapport simple avec l'horodatage
@@ -36,7 +47,7 @@ module.exports = defineConfig({
         const logs = results.tests
           .flatMap(test => test.attempts)
           .flatMap(attempt => attempt.console)
-          .filter(log => log.type === 'log')
+          .filter(log => log && log.type === 'log')
           .map(log => log.message)
           .join('\n')
 

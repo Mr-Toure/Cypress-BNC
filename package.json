@@ -1,14 +1,22 @@
 {
-  "name": "bnc",
+  "name": "tests-e2e-bnc",
   "version": "1.0.0",
+  "description": "Tests end-to-end pour le site web bnc.ca avec Cypress",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "cypress:open": "cypress open",
+    "cypress:run": "cypress run",
+    "test:e2e": "cypress run --spec 'cypress/e2e/bnc-homepage.cy.js'",
+    "generate:visual": "node scripts/generate-visual-report.js"
   },
-  "keywords": [],
+  "keywords": [
+    "cypress",
+    "testing",
+    "e2e",
+    "bnc"
+  ],
   "author": "",
   "license": "ISC",
-  "description": "",
   "devDependencies": {
     "cypress": "^14.3.3"
   }
