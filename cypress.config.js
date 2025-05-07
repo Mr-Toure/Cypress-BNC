@@ -37,6 +37,24 @@ module.exports = defineConfig({
         }
       })
 
+      on('task', {
+        saveErrors({ filePath, errors }) {
+          const fs = require('fs')
+          const path = require('path')
+
+          // Créer le dossier s'il n'existe pas
+          const dir = path.dirname(filePath)
+          if (!fs.existsSync(dir)) {
+            fs.mkdirSync(dir, { recursive: true })
+          }
+
+          // Écrire les erreurs dans le fichier
+          fs.writeFileSync(filePath, JSON.stringify(errors, null, 2))
+          console.log(`Erreurs sauvegardées dans : ${filePath}`)
+          return null
+        }
+      })
+
       // Événement après la fin du test pour générer un rapport
       on('after:spec', (spec, results) => {
         // Créer un rapport simple avec l'horodatage

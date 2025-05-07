@@ -1,13 +1,20 @@
 const fs = require('fs')
 const path = require('path')
 
-// Fonction pour générer un rapport HTML à partir des captures d'écran
+// Fonction pour générer un rapport HTML à partir des captures d'écran et des erreurs
 function generateVisualReport() {
   const screenshotsDir = path.join(__dirname, '..', 'cypress', 'screenshots')
+  const errorsFile = path.join(__dirname, '..', 'cypress', 'reports', 'errors.json')
 
   if (!fs.existsSync(screenshotsDir)) {
     console.log('Dossier de captures d\'écran non trouvé')
     return
+  }
+
+  // Charger les erreurs si le fichier existe
+  let errors = []
+  if (fs.existsSync(errorsFile)) {
+    errors = JSON.parse(fs.readFileSync(errorsFile, 'utf-8'))
   }
 
   // Trouver le dossier de test le plus récent
@@ -36,11 +43,6 @@ function generateVisualReport() {
       return timeA.localeCompare(timeB)
     })
 
-  if (screenshots.length === 0) {
-    console.log('Aucune capture d\'écran trouvée dans le dossier le plus récent')
-    return
-  }
-
   // Générer le HTML
   const html = `
 <!DOCTYPE html>
@@ -48,7 +50,7 @@ function generateVisualReport() {
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Rapport visuel de chargement BNC.ca</title>
+  <title>Rapport visuel et erreurs</title>
   <style>
     body {
       font-family: Arial, sans-serif;
@@ -88,10 +90,23 @@ function generateVisualReport() {
       height: auto;
       border: 1px solid #eee;
     }
+    .errors {
+      margin-top: 20px;
+      padding: 10px;
+      background-color: #ffe6e6;
+      border: 1px solid #ffcccc;
+      border-radius: 5px;
+    }
+    .error-item {
+      margin-bottom: 10px;
+    }
+    .error-item strong {
+      color: #e31837;
+    }
   </style>
 </head>
 <body>
-  <h1>Rapport visuel de chargement de BNC.ca</h1>
+  <h1>Rapport visuel et erreurs</h1>
 
   <p>Ce rapport montre le déroulement visuel du chargement de la page d'accueil de BNC.ca.</p>
 
@@ -112,6 +127,18 @@ function generateVisualReport() {
     </div>`
     }).join('')}
   </div>
+
+  ${errors.length > 0 ? `
+  <div class="errors">
+    <h2>Erreurs détectées</h2>
+    ${errors.map((error, index) => `
+      <div class="error-item">
+        <strong>Erreur ${index + 1}:</strong> ${error.message}
+        <pre>${error.stack}</pre>
+      </div>
+    `).join('')}
+  </div>
+  ` : '<p>Aucune erreur détectée.</p>'}
 </body>
 </html>
   `
@@ -119,7 +146,7 @@ function generateVisualReport() {
   // Écrire le fichier HTML
   const reportPath = path.join(__dirname, '..', 'cypress', 'reports', 'visual-report.html')
   fs.writeFileSync(reportPath, html)
-  console.log(`Rapport visuel généré: ${reportPath}`)
+  console.log(`Rapport généré : ${reportPath}`)
   return reportPath
 }
 

@@ -1,8 +1,14 @@
+const fs = require('fs')
+const path = require('path')
+
 // Cypress test pour bnc.ca avec surveillance détaillée du chargement
 describe('Tests du site BNC.ca', () => {
   beforeEach(() => {
     // Initialiser un tableau pour stocker les événements de chargement
     cy.wrap([]).as('loadEvents')
+
+    // Initialiser un tableau pour stocker les erreurs
+    cy.wrap([]).as('errorLogs')
 
     // Intercepter toutes les requêtes réseau pour surveiller le chargement
     cy.intercept('**', (req) => {
@@ -18,12 +24,45 @@ describe('Tests du site BNC.ca', () => {
     // Intercepter les erreurs JavaScript
     cy.on('window:error', (error) => {
       console.error(`Erreur JavaScript détectée: ${error.message}`)
+      cy.get('@errorLogs').then((errorLogs) => {
+        errorLogs.push({ message: error.message, stack: error.stack })
+        cy.wrap(errorLogs).as('errorLogs')
+      })
     })
 
     // Intercepter les erreurs de requête
     cy.on('fail', (error) => {
       console.error(`Échec du test: ${error.message}`)
+      cy.get('@errorLogs').then((errorLogs) => {
+        errorLogs.push({ message: error.message, stack: error.stack })
+        cy.wrap(errorLogs).as('errorLogs')
+      })
       return false // Empêcher Cypress d'échouer immédiatement
+    })
+  })
+
+  afterEach(() => {
+    // Sauvegarder les erreurs dans un fichier JSON après chaque test
+    cy.get('@errorLogs').then((errorLogs) => {
+      if (errorLogs.length > 0) {
+        const errorsFilePath = path.join(__dirname, '..', 'cypress', 'reports', 'errors.json')
+        cy.task('saveErrors', { filePath: errorsFilePath, errors: errorLogs })
+
+        // Afficher un résumé des erreurs dans la console Cypress
+        console.log(`Fin du test : ${errorLogs.length} erreur(s) rencontrée(s)`)
+        errorLogs.forEach((error, index) => {
+          console.log(`Erreur ${index + 1}: ${error.message}`)
+        })
+
+        // Afficher un résumé des erreurs dans le navigateur
+        cy.window().then((win) => {
+          const errorSummary = `Fin du test : ${errorLogs.length} erreur(s) rencontrée(s)\n` +
+            errorLogs.map((error, index) => `Erreur ${index + 1}: ${error.message}`).join('\n')
+          win.alert(errorSummary) // Affiche une alerte avec le résumé des erreurs
+        })
+      } else {
+        console.log('Fin du test : Aucune erreur rencontrée')
+      }
     })
   })
 
